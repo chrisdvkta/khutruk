@@ -1,36 +1,167 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Khutruk
 
-## Getting Started
+Khutruk is an open-source Web3 crowdfunding platform focused on social and disaster-relief fundraising.  
+It combines:
 
-First, run the development server:
+- **Next.js 14** frontend and API routes
+- **Prisma + MongoDB** for off-chain app data
+- **Solidity + Hardhat** smart contracts for on-chain campaign and donation flows
+- **MetaMask + ethers.js** wallet and contract interactions
+- **Pinata/IPFS** media upload for campaign images
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Features
+
+- User signup/login with JWT authentication
+- Wallet linking (MetaMask address mapped to authenticated user)
+- Multi-step campaign creation
+  - Campaign metadata (category, title, description)
+  - Campaign image upload to IPFS
+  - On-chain campaign creation transaction
+  - Off-chain campaign persistence in MongoDB
+- Campaign discovery dashboard and campaign detail pages
+- On-chain donation flow
+- On-chain withdrawal request and release flow for campaign creators
+
+## Tech Stack
+
+- **Frontend:** Next.js App Router, React, TypeScript, Tailwind CSS, shadcn/ui
+- **Web3:** ethers.js, MetaMask SDK, Hardhat, Hardhat Ignition
+- **Backend/Data:** Next.js API routes, Prisma Client, MongoDB
+- **Storage:** Pinata IPFS gateway
+
+## Project Structure
+
+```text
+contracts/                 Solidity contracts
+ignition/modules/          Hardhat Ignition deployment modules
+prisma/schema.prisma       Database schema (MongoDB)
+src/app/                   App Router pages + API routes
+src/domain/repositories/   Frontend data access layer for API endpoints
+src/services/campaign/     Smart contract interaction services
+src/AddressABI/            Contract ABI + configured deployed address
+test/                      Hardhat tests (template Lock contract)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## API Routes (Current)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Route | Method | Purpose |
+|---|---|---|
+| `/api/create-user` | POST | Register user and return JWT |
+| `/api/user-login` | POST | Authenticate user and return JWT |
+| `/api/retrieve-users` | GET | Get current user from JWT |
+| `/api/connect-metamask` | POST | Attach wallet address to authenticated user |
+| `/api/create-campaign` | POST | Persist campaign metadata |
+| `/api/retrieve-campaign` | GET | List campaigns |
+| `/api/retrieve-campaign/[sequenceId]` | GET | Get campaign by sequence id |
+| `/api/donation` | POST | Donation persistence endpoint scaffold (not fully implemented) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Smart Contract Overview
 
-## Learn More
+Main contract: `contracts/DisasterRelifCampaign.sol`
 
-To learn more about Next.js, take a look at the following resources:
+Core on-chain actions:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `createCampaign(title, description, targetAmount)`
+- `donate(campaignId)` (payable)
+- `requestWithdrawal(campaignId, amount, reason)`
+- `releaseWithdrawal(campaignId, requestIndex)`
+- `getCampaign(campaignId)`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Key rules:
 
-## Deploy on Vercel
+- Max withdrawal request per release window: **30%** of available funds
+- Delay between releases: **3 days**
+- Additional delay before release approval: **24 hours**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Prerequisites
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Node.js 18+ (recommended)
+- npm
+- MongoDB connection string
+- MetaMask browser extension (for wallet interactions)
+- (Optional) Sepolia ETH for deployment/testing on Sepolia
+
+## Environment Variables
+
+Create a `.env` file in the repository root:
+
+```env
+DATABASE_URL=
+NEXT_PUBLIC_BASE_API_URL=http://localhost:3000/api/
+NEXT_PUBLIC_JWT_SECRET=
+NEXT_PUBLIC_IPFS_JWT=
+NEXT_PUBLIC_IPFS_GATEWAY=
+PRIVATE_KEY=
+```
+
+Notes:
+
+- `NEXT_PUBLIC_BASE_API_URL` is used by frontend repository calls.
+- `PRIVATE_KEY` is used by Hardhat deploy script for Sepolia.
+- IPFS variables are used by Pinata uploads.
+
+## Local Development
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Generate Prisma client:
+
+   ```bash
+   npx prisma generate
+   ```
+
+3. Start development server:
+
+   ```bash
+   npm run dev
+   ```
+
+4. Open `http://localhost:3000`.
+
+## Smart Contract Workflow
+
+- Compile contracts:
+
+  ```bash
+  npx hardhat compile
+  ```
+
+- Run tests:
+
+  ```bash
+  npx hardhat test
+  ```
+
+- Deploy with Ignition (configured script):
+
+  ```bash
+  npm run deploy
+  ```
+
+## Quality Checks
+
+- Lint frontend:
+
+  ```bash
+  npm run lint
+  ```
+
+## Open Source
+
+This project is open source under **The Unlicense**.  
+See [`LICENSE`](./LICENSE) for details.
+
+## Contributing
+
+Contributions are welcome:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make focused changes with clear commit messages
+4. Open a pull request
+
+Please follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
